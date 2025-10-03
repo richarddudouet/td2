@@ -1,0 +1,820 @@
+---
+title: "Correction du TD2"
+format:
+  html:
+    toc: true        # active le sommaire
+    toc-location: left   # ou right
+    toc-depth: 5
+editor: visual
+---
+
+```{=html}
+<style>
+h3 {
+  margin-top: 1em;  /* espace avant chaque sous-titre h3 */
+}
+
+h4 {
+  margin-top: 1em;  /* espace avant chaque sous-titre h3 */
+}
+
+h3 {
+  border: 3px solid black;
+  border-radius: 35px;
+  padding: 1em;
+}
+
+h4 {
+  display: inline-block;
+  border: 3px solid black;
+  border-radius: 35px;
+  padding: 0.5em;
+}
+
+h5 {
+  display: inline-block;
+  border: 2px solid grey;
+  border-radius: 35px;
+  padding: 0.5em;
+}
+
+h6 {
+  display: inline-block;
+  border: 2px dotted gray;
+  border-radius: 35px;
+  padding: 0.5em;
+  color: grey;
+}
+
+
+/* ——— Ajouts pour le pliage des sections ——— */
+h3.foldable, h4.foldable, h5.foldable, h6.foldable {
+  cursor: pointer;
+  position: relative;
+  padding-right: 2em; /* espace pour la flèche */
+}
+h3.foldable::after, h4.foldable::after, h5.foldable::after, h6.foldable::after {
+  content: "▾";              /* flèche vers le bas = ouvert */
+  position: absolute;
+  right: 0.6em;
+  top: 50%;
+  transform: translateY(-50%);
+  font-weight: 600;
+}
+
+/* Cache tout le contenu d’une section pliée, sauf son titre */
+section.folded > :not(h2):not(h3):not(h4):not(h5):not(h6) { display: none; }
+/* Cache les sous-sections imbriquées quand le parent est plié */
+section.folded > section { display: none; }
+/* Flèche fermée */
+section.folded > .foldable::after { content: "▸"; }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  // Niveaux de titres repliables (modifie si besoin)
+  const foldableLevels = [ 3, 4, 5, 6];  // h3..h6
+
+  // Pour plier automatiquement à l’ouverture à partir d’un niveau donné,
+  // mets un nombre (ex: 4 pour plier h4+). Laisse null pour ne rien plier par défaut.
+  const defaultCollapseFromLevel = 3;
+
+  function toggle(sec, heading){
+    const folded = sec.classList.toggle('folded');
+    heading.setAttribute('aria-expanded', String(!folded));
+  }
+
+  foldableLevels.forEach(level => {
+    document.querySelectorAll(`section.level${level}`).forEach(sec => {
+      const heading = sec.querySelector(`:scope > h${level}`);
+      if (!heading) return;
+
+      // Accessibilité + style
+      heading.classList.add('foldable');
+      heading.setAttribute('role', 'button');
+      heading.setAttribute('tabindex', '0');
+      heading.setAttribute('aria-expanded', 'true');
+
+      // Clic (en ignorant le clic sur l’ancre de lien du titre)
+      heading.addEventListener('click', (e) => {
+        if (e.target.closest('a')) return;
+        toggle(sec, heading);
+      });
+      // Clavier (Entrée ou Espace)
+      heading.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          toggle(sec, heading);
+        }
+      });
+
+      // État initial (plié/déplié) configurable
+      if (defaultCollapseFromLevel && level >= defaultCollapseFromLevel) {
+        sec.classList.add('folded');
+        heading.setAttribute('aria-expanded', 'false');
+      }
+    });
+  });
+});
+</script>
+</style>
+```
+## Question 1 : Importez les deux bases de données du TD2 et joignez les et créez un objet d_join et enregistrez cette base en RDS.
+
+Avant de commencer tout travail, il est important de bien préparer son projet et ses dossiers.
+
+### A. D'abord il faut setup
+
+#### a. Premièrement: créez un projet
+
+Pour créer un projet, cliquez sur l'icone R dans un cube en haut à droite de l'interface R studio. Cliquez ensuite sur "new projet"
+
+#### b. Deuxièmement : créez les 3 fichiers
+
+Dans la fenêtre "Files" cliquez sur l'icone dossier avec un + vert.
+
+Creez 3 fichier: Un fichier "Scripts", un fichier "Data", un fichier "Results".\
+Ces fichiers servent à ranger vos scripts, vos données et vos tableaux et figures respectivement.\
+Restez toujours organisé.
+
+#### c. Troisièmement : créez votre script
+
+Pour créer un script, cliquez sur la page blanche avec un + vert en haut à gauche d'R studio.
+
+Votre script doit lui aussi être organisé et rangé: mettez toujours le titre du script, la date de création et de dernière modification ainsi que quattre tiret "\-\-\--" après vos titre pour indiquer à R studio qu'il sagit d'un titre, et pouvoir vous y retrouver dans la section "Outline" (icone avec des traits horizontaux en haut à droite de la fenêtre du script).
+
+Vous pouvez copier-coller cette organisation, mais trouvez la votre.
+
+```{r, eval=FALSE}
+#____________________________________________________________________________----
+#____________________________________________________________________________----
+#____________________________________________________________________________----
+#           STAGE M2: TITRE DU SCRIPT ----
+#____________________________________________________________________________----
+#____________________________________________________________________________----
+#____________________________________________________________________________----
+# Date de création: 
+# Date de dernière modification: 
+
+# 0. Setup ----
+#__________----
+## a. Packages à charger----
+## b. Environnement à charger----
+
+#____________________________________________________________________________----
+# 1. Importation de la base ----
+#___________________________----
+## a. Sous titre 1----
+## b. Sous titre 2----
+## c. Sous titre 3----
+### i. sous-sous titre----
+
+#___________________________________________________________________________----
+# 2. Section 2 ----
+#___________________________----
+## a. Sous titre 1----
+## b. Sous titre 2----
+## c. Sous titre 3----
+### i. sous-sous titre----
+```
+
+#### d. Cinquièmement : chargez
+
+R fonctionne à l'aide de packages.\
+Vous pouvez installer des packages en allant dans la fenêtre "Packages" -\> "Install".\
+Une fois installé, pour pouvoir utiliser le package vous devez le "charger".
+
+\
+Pour le charger, on utilise la fonction `library()`pour "bibliothèque".\
+Nous disons à R : "va chercher le package dans la bibliothèque des packages installés".
+
+```{r, eval=FALSE}
+#____________________________________________________________________________----
+#____________________________________________________________________________----
+#____________________________________________________________________________----
+#           TD 2 Correction----
+#____________________________________________________________________________----
+#____________________________________________________________________________----
+#____________________________________________________________________________----
+# Date de création: 03/10/2025
+# Date de dernière modification: 03/10/2025
+
+# 0. Setup ----
+#__________----
+## a. Packages à charger----
+library(tidyverse)
+library(labelled)
+library(crosstable)
+library(lubridate)
+
+
+## b. Environnement à charger----
+
+#____________________________________________________________________________----
+# 1. Importation de la base ----
+#___________________________----
+## a. Sous titre 1----
+## b. Sous titre 2----
+## c. Sous titre 3----
+### i. sous-sous titre----
+
+#___________________________________________________________________________----
+# 2. Section 2 ----
+#___________________________----
+## a. Sous titre 1----
+## b. Sous titre 2----
+## c. Sous titre 3----
+### i. sous-sous titre----
+```
+
+#### e. Sixièmement : se rappelez des bases et de la logique de R
+
++-----+---------------+-----+----------------------------------------------------------------------------------------------------------------------+-----+--------------------------------------------------------------------+-----+--------------------------------------------------------+-----+
+|     |               |     |                                                                                                                      |     |                                                                    |     |                                                        |     |
++-----+---------------+-----+----------------------------------------------------------------------------------------------------------------------+-----+--------------------------------------------------------------------+-----+--------------------------------------------------------+-----+
+|     | Élément       |     | Définition                                                                                                           |     | Utilité                                                            |     | Utilisation                                            |     |
++-----+---------------+-----+----------------------------------------------------------------------------------------------------------------------+-----+--------------------------------------------------------------------+-----+--------------------------------------------------------+-----+
+|     |               |     |                                                                                                                      |     |                                                                    |     |                                                        |     |
++-----+---------------+-----+----------------------------------------------------------------------------------------------------------------------+-----+--------------------------------------------------------------------+-----+--------------------------------------------------------+-----+
+|     | **Objet**     |     | Conteneur qui stocke une valeur (numérique, texte, vecteur, fonction, dataframe, etc.)                               |     | Permet de réutiliser et manipuler des données facilement           |     | `x <- 42` `nom <- "Alice"`                             |     |
++-----+---------------+-----+----------------------------------------------------------------------------------------------------------------------+-----+--------------------------------------------------------------------+-----+--------------------------------------------------------+-----+
+|     |               |     |                                                                                                                      |     |                                                                    |     |                                                        |     |
++-----+---------------+-----+----------------------------------------------------------------------------------------------------------------------+-----+--------------------------------------------------------------------+-----+--------------------------------------------------------+-----+
+|     | **Vecteur**   |     | Suite ordonnée de valeurs du même type (numérique, texte, logique, etc.)                                             |     | Structure de base en R pour stocker une série de données homogènes |     | `v <- c(1, 2, 3, 4)` `noms <- c("a", "b", "c")`        |     |
++-----+---------------+-----+----------------------------------------------------------------------------------------------------------------------+-----+--------------------------------------------------------------------+-----+--------------------------------------------------------+-----+
+|     |               |     |                                                                                                                      |     |                                                                    |     |                                                        |     |
++-----+---------------+-----+----------------------------------------------------------------------------------------------------------------------+-----+--------------------------------------------------------------------+-----+--------------------------------------------------------+-----+
+|     | **DataFrame** |     | Tableau de données en 2 dimensions, où chaque colonne est un vecteur (même longueur mais types différents possibles) |     | Manipulation de données structurées (comme une feuille Excel)      |     | `df <- data.frame(nom=c("Alice","Bob"), age=c(25,30))` |     |
++-----+---------------+-----+----------------------------------------------------------------------------------------------------------------------+-----+--------------------------------------------------------------------+-----+--------------------------------------------------------+-----+
+|     |               |     |                                                                                                                      |     |                                                                    |     |                                                        |     |
++-----+---------------+-----+----------------------------------------------------------------------------------------------------------------------+-----+--------------------------------------------------------------------+-----+--------------------------------------------------------+-----+
+|     | **Fonction**  |     | Bloc de code réutilisable qui prend des arguments et retourne un résultat.                                           |     | Automatise et réutilise des calculs ou analyses                    |     | `nomdelafonction(argument 1 = X,`                      |     |
+|     |               |     |                                                                                                                      |     |                                                                    |     |                                                        |     |
+|     |               |     | Est toujours sous la forme : `nomdelafonction()`                                                                     |     |                                                                    |     | `argument2=Y)`                                         |     |
++-----+---------------+-----+----------------------------------------------------------------------------------------------------------------------+-----+--------------------------------------------------------------------+-----+--------------------------------------------------------+-----+
+|     |               |     |                                                                                                                      |     |                                                                    |     |                                                        |     |
++-----+---------------+-----+----------------------------------------------------------------------------------------------------------------------+-----+--------------------------------------------------------------------+-----+--------------------------------------------------------+-----+
+
+### B. Ensuite vous pouvez importer et joindre les bases de donnée
+
+#### a. Importer
+
+Dans la fenêtre de l'environnement, cliquez sur "Import".\
+En fonction de l'extension du dataset que vous voulez importer cliquez sur :\
+- From text (readr) -\> si il est en .csv (attention au séparateur).\
+- From excel -\> si il est en .xls ou xlsx.
+
+Copier coller systématiquement les commandes dans votre script.
+
+```{r, eval = FALSE }
+## b. Environnement/base à charger----
+
+## Excel : ----
+nhanes2 <- read_excel("Data/nhanes2.xlsx")
+View(nhanes2)  
+
+## Educ csv ----
+library(readr)
+nhanes_educ <- read_delim("Data/nhanes_educ.csv", 
+                          delim = ";", escape_double = FALSE, trim_ws = TRUE)
+View(nhanes_educ)
+
+
+```
+
+#### b. Joindre les bases
+
+Pour joindre les bases vous devez être clair avec ce que vous voulez.\
+Ici, on veut joindre les bases pour récupérer le niveau d'éducation.\
+Comme la dernière fois, on va comparer les deux data frames et on va essayer de comprendre les différences entre les deux pour pouvoir les joindre proprement.
+
+Le but ici est de voir si il y a des personnes en plus dans le dataframe qui a le plus de lignes.\
+Autrement dit, de voir si il y a des ID différents entre les deux dataframes.
+
+\
+La logique que j'emploie ici est de prendre chaque valeur unique de la variable ID dans chaque dataframe, car je ne m'interesse pas ici encore aux ID qui reviennent plusieurs fois.
+
+Je veux observer les différences entre les deux vecteurs ID, et je veux voir combien apparaissent en plus dans le dataframe avec le niveau d'éducation.\
+
+```{r, eval=FALSE}
+#____________________________________________________________________________----
+# 0. Joindre les deux bases de données ----
+#___________________________----
+## Pour que les lignes de nhanes_educ correspondent aux lignes de nhanes2
+## Comment voir les ID différents entre les deux ----
+setdiff(x= unique(nhanes_educ$ID), 
+        y= unique(nhanes2$ID)) %>%  # Setdiff retourne les éléments de x qui                                      ne sont pas dans y dans un vecteur 
+  length()                    # Donne la longueur du vecteur
+
+
+# Attention si vous mettez nhanes2 en premier il vous donnera 0, car il donne le nombre en PLUS. Soyez Vigilent
+
+# Ici on voit que certains ID sont dans nhanes_educ mais pas dans nhanes2. 
+# Est ce uniquement à cause de la number_survey? -> non puisque nous avons utilisé unique() qui nous donne chaque ID une seule fois. 
+
+# On prendra tout de même uniquement ceux du dataframe nhanes2 car la majorité des données sont disponible pour eux. 
+
+```
+
+Comme au TD précédent, il y a en plus des ID différents des ID qui se répètent et qui correspondent à des vagues de réponse différents.
+
+```{r, eval=FALSE}
+## Joindre les deux bases---- 
+d_join=left_join(x=nhanes2, # premier argument
+               y=nhanes_educ, # deuxième argument
+               by=c("ID", "number_survey")) # troisième argument
+
+## Vérifier que les bases ont été correctement join----
+nrow(d_join) 
+summary(d_join$ID==nhanes2$ID) # == compare les deux éléments  
+# Nous avons bien 4835 lignes comme nhanes2
+# Les 4835 sont vrais, nous avons bien les mêmes ID
+```
+
+Vous pouvez enregistrer cette base dans votre dossier du projet.
+
+```{r, eval=FALSE}
+saveRDS(object=d_join,
+        file="Data/d_nhanes_join.rds")
+```
+
+## Question 2: Cherchez les variables qui correspondent et créez un nouvel objet pour l'enregistrer dans l'environnement appelé d.
+
+> Votre maitre de stage veut que vous travailliez sur plusieurs variables : ID, le genre, Date de naissance, Race, Si oui ou non la personne travaille, Le poids la taille, la tension artérielle, Tabac, Activité physique, le niveau d'éducation, depressed, sleep.
+
+### A. Chercher les variables
+
+Vous avez plusieurs options pour chercher des variables dans un dataframe.\
+Vous pouvez commencer par regarder les noms et décrire succintement le dataframe, cela vous donnera des indices.\
+Souvent vous avez un descriptif des variables dans un fichier et un dictionnaire, mais parfois vous devez chercher des variables dans la base en tatonnant.
+
+\
+Grace au tidyverse, vous pouvez chercher facilement parmis les noms de variable ce qui pourrait correspondre :
+
+```{r, eval=FALSE}
+#____________________________________________________________________________----
+# 1. Sélection des variables demandés ----
+#___________________________----
+
+# j'essaie de trouver les variables qu'il me demande
+d_join %>% 
+  select(ID, Gender, 
+         contains(c("date", "naissance", "birth", "date","age")) | 
+           contains("Age"),
+         contains("Race"),
+         Work, Weight, Height, 
+         starts_with("BP"),
+         contains("smok"),
+         Education,
+         contains("PhysActive"),
+         Depressed,
+         SleepTrouble,
+         Commentaires
+         ) %>%  names()
+
+d %>% names
+str(d)
+
+##  Y a t il une date de naissance ? 
+# Souvent dans les premières variables d'un data frame
+d_join %>% names
+# Peut être sous un format date? 
+
+library(lubridate)
+d_join %>% 
+  select(where(is.Date)) %>% 
+  names 
+# Aucun n'est sous format date. 
+# On va regarder si certaines peuvent correspondre visuellement (souvent écrit en mode character)
+str(d_join) # ddn ressemble effectivement
+
+
+
+
+# Qu'est ce que Race3?
+summary(d_join$Race3) #Que des NA, je peux l'enlever
+
+
+
+d_join %>% 
+  select(ID, Gender, ddn, 
+         Race1,
+         Work, Weight, Height, 
+         starts_with("BP"),
+         contains("smok"),
+         Education,
+         contains("PhysActive"),
+         Depressed,
+         SleepTrouble,
+         Commentaires
+  ) %>%  names()
+
+# Qu'est ce que Smoke100, Smoke100n 
+summary(d_join$Smoke100)
+table(d_join$Smoke100)
+
+
+library(crosstable)
+crosstable(d_join,
+           c(Smoke100, Smoke100n),
+           by=SmokeNow) # On suppose que c'est smoke dans les 100 derniers jours,
+
+# Comme on est pas sur, on veut prendre uniquement les fumeurs du moment :
+d_join %>% 
+  select(ID, Gender, ddn, 
+         Race1,
+         Work, Weight, Height, 
+         starts_with("BP"),
+         SmokeNow,
+         Education,
+         contains("PhysActive"),
+         Depressed,
+         SleepTrouble,
+         Commentaires
+  ) %>%  names()
+
+# Qu'est ce que PhysActiveDays selon vous? 
+crosstable(d_join,
+           PhysActiveDays,
+           by=PhysActive)
+
+# Nous on veut juste savoir si ils sont physically active oui ou non. 
+d_join %>% 
+  select(ID, Gender, ddn, 
+         Race1,
+         Work, Weight, Height, 
+         starts_with("BP"),
+         SmokeNow,
+         Education,
+         PhysActive,
+         Depressed,
+         SleepTrouble,
+         Commentaires
+  ) %>%  names()
+
+```
+
+### B. Creer un nouvel objet d qui sera notre base de travail
+
+```{r, eval=FALSE}
+#___________________________________________________________________________----
+# 2. Création de notre base de travail ----
+#___________________________----
+# On peut maintenant le mettre dans un nouvel objet car on est sur des variables
+# sélectionnées 
+d=d_join %>% 
+  select(ID, Gender, ddn, 
+         Race1,
+         Work, Weight, Height, 
+         starts_with("BP"),
+         SmokeNow,
+         Education,
+         PhysActive,
+         Depressed,
+         SleepTrouble,
+         Commentaires
+  )
+
+
+
+# On veut visualiser globalement les données, voir sous quel formats ils sont maintenant: 
+library(labelled)
+look_for(d)
+```
+
+## Question 3: Renommez les variables en français pour votre confort de travail à l'aide de la fonction rename() (ou celle que vous voulez)
+
+### A. Rappel sur le pipe et le tidyverse
+
+Le pipe du tidyverse c'est ce symbole : `%>%` .\
+Le raccourci clavier dans R studio c'est CTRL + Shift + M (Cmd sur Mac).
+
+Cela sert beaucoup quand on a une suite d'argument.\
+Le pipe fait "circuler" un objet (souvent un data frame) de gauche à droite, pour le placer en premier argument de la fonction suivante.
+
+Exemple :
+
+```{r, eval=FALSE}
+d %>% select(ID)
+```
+
+Est l'équivalent de :
+
+```{r, eval=FALSE}
+select(d,
+       ID)
+```
+
+Sur cet exemple on ne comprends pas trop l'intérêt, mais quand on a plusieurs fonctions d'affilé, cela rend les choses plus lisibles.\
+Littéralement plus lisible: vous pouvez lire une fonction R en "Français" :
+
+```{r, eval=FALSE}
+v %>%    
+  mean() %>%  
+  round(digits = 1) %>% 
+  format(decimal.mark = ",") %>%
+  paste0("La moyenne est de ",.,".") %>%  
+  message()
+```
+
+> Ici la commande se traduit littéralement et facilement en :\
+> Prend v ET ENSUITE\
+> Fais en la moyenne PUIS\
+> Arrondi à un chiffre après la virgule PUIS\
+> Formate pour mettre une virgule PUIS\
+> Forme un message qui dira "La moyenne est de ***resultats des fonctions précédentes*****."** PUIS\
+> Affiche le message.
+
+\
+Quand vous voulez que tout ce qu'il y a avant soit placé à un autre argument que le premier, il faut utiliser le "placeholder" `.`
+
+Exemple :
+
+```{r, eval=FALSE}
+# On veut afficher le message "Nombre de ligne" AVANT le résultat, donc on met le resultat après.
+
+d %>%
+  nrow() %>%
+  paste("Nombre de lignes:", .)
+```
+
+### B. Règles à respecter
+
+ATTENTION : quand vous renommez respectez les règles pour ne pas être embêter sur de futures manipulations et confort de codage:
+
+-   Tout est en minuscule
+
+<!-- -->
+
+-   Les nom en plusieurs mots sont séparés par \_ ou une majuscule
+
+Personnellement je ne renome pas les variables d'origine, je renomme que quand je modifie la variable pour savoir exactement lesquels sont les variables d'origine et lesquelles sont des variables que j'ai créé.
+
+### C. La fonction rename()
+
+```{r, eval=FALSE}
+# 3. Renommer les variables ----
+#___________________________----
+## a. Renommer----
+# "Prend d et renome toutes les variables indiqués en argument et stocke ce nouveau dataframe dans un objet appelé d_rename"
+d_rename <- d %>% 
+  rename(
+    identifiant     = ID,
+    genre           = Gender,
+    date_naissance  = ddn,
+    origine         = Race1,
+    emploi          = Work,
+    poids           = Weight,
+    taille          = Height,
+    tension_sys_1   = BPSys1,
+    tension_dia_1   = BPDia1,
+    tension_sys_2   = BPSys2,
+    tension_dia_2   = BPDia2,
+    tension_sys_3   = BPSys3,
+    tension_dia_3   = BPDia3,
+    fumeur_actuel   = SmokeNow,
+    education       = Education,
+    actif_physique  = PhysActive,
+    depressif       = Depressed,
+    troubles_sommeil = SleepTrouble,
+    commentaires    = Commentaires
+  )
+
+
+```
+
+## Question 4: Calculez l'IMC (poids/taille2) en créant une variable imc (avec mutate() ou autre)
+
+On à normalement vu plus tôt que le poids et la taille sont enregistrés en mode character, notamment grace à la fonction `str()`.\
+On ne peut faire de calcul que si les variables sont "numeric".\
+Ce n'est convertible en numeric que si il y a rien d'autre que des chiffres dans le vecteur.
+
+### A. Comment créer une variable ?
+
+Pour créer une variable on utilise la fonction `mutate()`.\
+`mutate()` s'utilise toujours dans le cadre d'un dataframe. Il faudra toujours préciser dans quel dataframe on veut modifier la variable.
+
+C'est à dire soit :
+
+```{r, eval=FALSE}
+mutate(d, # prend en premier argument le dataframe dont on veut modifier la variable
+       nouvelle_variable=opération(ancienne_variable)) 
+# On indique ensuite le nom de la nouvelle variable, puis = et ensuite les conditions pour la créer. 
+```
+
+Soit:
+
+```{r, eval=FALSE}
+
+d %>% mutate( # prend en premier argument le dataframe dont on veut modifier la variable
+       nouvelle_variable=opération(ancienne_variable)) 
+# On indique ensuite le nom de la nouvelle variable, puis = et ensuite les conditions pour la créer. 
+
+```
+
+> **IMPORTANT : Dans R, il faut toujours préciser dans quel dataframe on travaille.**
+
+Mais ici, on a pas enregistré nos modifications, on a juste fait une opération.\
+Pour enregistrer, comme toujours dans R, il faut l'enregistrer dans un objet.\
+Si on veut l'enregistrer dans un nouvel objet sous la forme d'un nouveau dataframe, on a juste à écrire un nouveau nom.
+
+```{r, eval=FALSE}
+nouveau_dataframe=d %>% mutate( # prend en premier argument le dataframe dont on veut modifier la variable
+       nouvelle_variable=opération(ancienne_variable))
+```
+
+Si on veut modifier notre dataframe d, il faut enregistrer notre nouveau dataframe au même nom d. R remplacera l'objet d par ce nouvel objet d qui contient les variables modifiées.
+
+C'est pour ça que quand on veut modifier un dataframe ou une variable à l'intérieur, votre code commencera souvent par `d=d %` . Cela enregistrera vos modifications.
+
+C'est la même logique dans `mutate()` .\
+Si on veut "modifier" une variable, la logique est decréer une nouvelle variable qui à le même nom que l'ancien, sinon r créera une nouvelle variable avec le nouveau nom.\
+
+> La logique c'est : enregistrer quelque chose qui a le même nom la remplace
+
+```{r, eval= FALSE}
+d=d %>% 
+  mutate(Weight= as.numeric(Weight)) # Si on veut remplacer l'ancienne = la modif
+
+d=d %>% 
+  mutate(Weight_num=as.numeric(Weight)) # Si on veut garder l'ancienne et en créer une nouvelle.
+
+# Personnellement j'aime bien garder les variables d'origine. 
+```
+
+### B. Calculer l'IMC
+
+Ainsi, pour calculer l'IMC il y a deux choses à faire:
+
+-   Convertir la taille et le poids en numerique à l'aide de `mutate()` et `as.numeric()`
+
+-   Calculer l'IMC.
+
+Vous comprenez donc qu'il n'est pas possible de faire :\
+
+```{r, eval=FALSE}
+d=d %>% 
+  as.numeric(Weight)
+```
+
+Même si c'est tentant.\
+Pourquoi ? Si vous faites ça r vous dit "Object Weight not found" -\> Il ne reconnait pas comme variable ni comme vecteur.
+
+Ce qu'on aurait pu faire en revanche sans tidyverse, c'est directement modifier le vecteur en le remplaçant :
+
+```{r, eval=FALSE}
+d$Weight<-as.numeric(d$Weight)
+```
+
+Mais `mutate` permet de faire plusieurs opérations à la suite et cela permet de gagner du temps.
+
+Nous pouvons donc créer l'IMC comme suit :
+
+```{r, eval=FALSE}
+#___________________________________________________________________________----
+# 4. Calcul de l'IMC ----
+#___________________________----
+## Version plus simple----
+d=d %>% 
+  mutate(Weight_num=as.numeric(Weight), # Crée une nouvelle variable Weight_num qui est la variable Weight                                          convertie en numérique
+         Height_num=as.numeric(Height),
+         Height_m= Height_num/100, # L'imc est en kg/m2 et ici la variable est en centimètre
+         imc=Weight_num/ Height_m^2) # le calcul de l'imc
+
+```
+
+### C. Catégorisation de l'IMC
+
+Si on veut ensuite catégoriser l'IMC, on utilisera des fonctions permettant de créer une variable à l'aide de conditions. \
+Les fonctions qui peuvent aider sont `ifelse()`et `case_when()`.
+
+`ifelse()` est simple d'utilisation mais peut s'avérer moins intuitif quand il y a trop de condition. \
+C'est simple, elle prend trois arguments principaux :
+
+-   Premier argument : c'est la condition. "IF" Si tel variable est supérieur à tel autre, ou si tel variable == "catégorie" etc....
+
+-   Deuxième argument : C'est ce que R va faire si la condition est TRUE.
+
+-   Troisième argument: C'est ce que R va faire si la condition est FALSE.
+
+Exemple :
+
+```{r, eval=FALSE}
+d=d %>% 
+  mutate(nouvelle_variable=ifelse(test= ancienne_variable_num>30,
+                                  yes= "Catégorie >30",
+                                  no= "Catégorie<30"))
+# Souvent on l'écrit comme suit sans le nom des arguments :
+d=d %>% 
+  mutate(nouvelle_variable=ifelse(ancienne_variable_num>30,"Catégorie >30", "Catégorie<30"))
+
+
+```
+
+Dans notre cas de catégorisation de l'IMC, il y a plusieurs conditions et donc plusieurs ifelse d'affilé :
+
+```{r, eval=FALSE}
+d=d %>% 
+  mutate(imc_cat = ifelse(imc < 25,
+                          "Normal", 
+                          ifelse(imc < 30,
+                                 "Surpoids",
+                                 "Obésité")))
+
+# Je m'explique : 
+d=d %>% 
+  mutate(imc_cat = ifelse(imc < 25, # test
+                          "Normal", # si imc<25 est TRUE
+                          # si imc<25 est FALSE applique ce qui suit: 
+                          ifelse(imc < 30, 
+                                 # test: imc<30 ET QUE IMC<25 EST FALSE (son imc est compris entre 25 et 29)
+                                 "Surpoids", # si oui : c'est qu'il est en surpoids
+                                 "Obésité")))# si non : c'est q'il est en obésité
+```
+
+Personnellement, pour éviter toute ambiguité et complexité j'utilise `case_when():`
+
+Cette fonction s'utilise comme suit, dans mutate :
+
+```{r, eval=FALSE}
+d=d %>% 
+  mutate(nouvelle_variable=case_when(
+    condition1 ~ "Nouvelle catégorie 1 ", # Si la condition 1 est vraie, créer la catégorie
+    condition2 ~ "Nouvelle catégorie 2 ", # si la condition 2 est vraie
+    condition3 ~ "Nouvelle catégorie 3 ", # si la condition 3 est vraie
+    TRUE ~ "Nouvelle catégorie restante" # si toutes les autres conditions sont fausses 
+    
+  ))
+```
+
+Dans notre cas :
+
+```{r, eval=FALSE}
+d=d %>% 
+  mutate(imc_cat=case_when(
+           imc<25 ~ "Normal",
+           imc>=25 & imc<30 ~ "Surpoids",
+           imc>=30 ~ "Obésité"), # Catégorisation de l'IMC  
+         )
+```
+
+Au total :
+
+```{r, eval=FALSE}
+#___________________________________________________________________________----
+# 4. Calcul de l'IMC ----
+#___________________________----
+
+
+## Version plus simple----
+d=d %>% 
+  mutate(Weight_num=as.numeric(Weight), # Crée une nouvelle variable Weight_num qui est la variable Weight                                          convertie en numérique
+         Height_num=as.numeric(Height),
+         Height_m= Height_num/100, # L'imc est en kg/m2 et ici la variable est en centimètre
+         imc=Weight_num/ Height_m^2, # le calcul de l'imc 
+         imc_cat=case_when(
+           imc<25 ~ "Normal",
+           imc>=25 & imc<30 ~ "Surpoids",
+           imc>=30 ~ "Obésité"), # Catégorisation de l'IMC  
+         )
+
+  
+
+## Version plus complexe----
+##_____________________-----
+# D'abord convertir puis faire le calcul: 
+d=d %>% 
+  mutate(across(c(Weight, Height),  # across permet de faire les modifications sur plusieurs variables
+                ~ as.numeric(.),    # ~ permet d'appeler une fonction dans l'argument, ici convertir en num
+                .names= "{.col}_num")) %>% # Je veux que mes nouvelles variables s'appelle comme leur nom d'origine + _num
+  mutate(Height_m= Height_num/100,  
+         imc=round(Weight_num/ ((Height_m)^2)),
+         imc_cat=case_when(
+           imc<25 ~ "Normal",
+           imc>=25 & imc<30 ~ "Surpoids",
+           imc>=30 ~ "Obésité"))
+
+
+
+
+```
+
+### D. VERIFIEZ TOUJOURS VOS NOUVELLES VARIABLES
+
+```{r, eval=FALSE}
+# Vérification:
+d %>% 
+  crosstable(.,
+             d %>% select(contains(c("num", "_m", "imc"))) %>% names)
+d %>% crosstable(.,
+                 imc,
+                 by=imc_cat) # Un IMC à 81 ???
+
+# Y a t il un probleme de taille ou de poids pour certains d'entre eux? 
+d %>% 
+  subset(imc>=40) %>% 
+  select(Weight_num, Height_m, imc) %>% 
+  view()
+# ça à l'air cohérent
+
+```

@@ -1,0 +1,319 @@
+---
+title: "Initiation à R: TD n°2"
+format:
+  html:
+    toc: true        # active le sommaire
+    toc-location: left   # ou right
+    toc-depth: 5
+editor: visual
+---
+
+```{=html}
+<style>
+h3 {
+  margin-top: 1em;  /* espace avant chaque sous-titre h3 */
+}
+
+h4 {
+  margin-top: 1em;  /* espace avant chaque sous-titre h3 */
+}
+
+h3 {
+  border: 3px solid black;
+  border-radius: 35px;
+  padding: 1em;
+}
+
+h4 {
+  display: inline-block;
+  border: 3px solid black;
+  border-radius: 35px;
+  padding: 0.5em;
+}
+
+h5 {
+  display: inline-block;
+  border: 2px solid grey;
+  border-radius: 35px;
+  padding: 0.5em;
+}
+
+h6 {
+  display: inline-block;
+  border: 2px dotted gray;
+  border-radius: 35px;
+  padding: 0.5em;
+  color: grey;
+}
+
+
+/* ——— Ajouts pour le pliage des sections ——— */
+h3.foldable, h4.foldable, h5.foldable, h6.foldable {
+  cursor: pointer;
+  position: relative;
+  padding-right: 2em; /* espace pour la flèche */
+}
+h3.foldable::after, h4.foldable::after, h5.foldable::after, h6.foldable::after {
+  content: "▾";              /* flèche vers le bas = ouvert */
+  position: absolute;
+  right: 0.6em;
+  top: 50%;
+  transform: translateY(-50%);
+  font-weight: 600;
+}
+
+/* Cache tout le contenu d’une section pliée, sauf son titre */
+section.folded > :not(h2):not(h3):not(h4):not(h5):not(h6) { display: none; }
+/* Cache les sous-sections imbriquées quand le parent est plié */
+section.folded > section { display: none; }
+/* Flèche fermée */
+section.folded > .foldable::after { content: "▸"; }
+</style>
+```
+```{=html}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  // Niveaux de titres repliables (modifie si besoin)
+  const foldableLevels = [ 3, 4, 5, 6];  // h3..h6
+
+  // Pour plier automatiquement à l’ouverture à partir d’un niveau donné,
+  // mets un nombre (ex: 4 pour plier h4+). Laisse null pour ne rien plier par défaut.
+  const defaultCollapseFromLevel = 3;
+
+  function toggle(sec, heading){
+    const folded = sec.classList.toggle('folded');
+    heading.setAttribute('aria-expanded', String(!folded));
+  }
+
+  foldableLevels.forEach(level => {
+    document.querySelectorAll(`section.level${level}`).forEach(sec => {
+      const heading = sec.querySelector(`:scope > h${level}`);
+      if (!heading) return;
+
+      // Accessibilité + style
+      heading.classList.add('foldable');
+      heading.setAttribute('role', 'button');
+      heading.setAttribute('tabindex', '0');
+      heading.setAttribute('aria-expanded', 'true');
+
+      // Clic (en ignorant le clic sur l’ancre de lien du titre)
+      heading.addEventListener('click', (e) => {
+        if (e.target.closest('a')) return;
+        toggle(sec, heading);
+      });
+      // Clavier (Entrée ou Espace)
+      heading.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          toggle(sec, heading);
+        }
+      });
+
+      // État initial (plié/déplié) configurable
+      if (defaultCollapseFromLevel && level >= defaultCollapseFromLevel) {
+        sec.classList.add('folded');
+        heading.setAttribute('aria-expanded', 'false');
+      }
+    });
+  });
+});
+</script>
+```
+</style>
+
+## Objectifs :
+
+-   Commencer un travail avec plus d'autonomie à l'aide d'un exercice
+
+-   Comprendre la logique de R en essayant et en faisant des erreurs
+
+-   Savoir manipuler des données
+
+## Que faire face à nos données ?
+
+### 1ère chose à faire : se rappeler du TD précédent
+
+#### o. Se rappeler de la question de recherche
+
+> Est ce que le niveau d'éducation est lié à l'IMC?
+
+#### a. Charger les packages nécessaires
+
+#### b. Importer et joindre correctement les bases de données et vérifier l'importation.
+
+#### c. Repérez la classe de vos variables et leurs noms, les décrire brièvement et succinctement, voir visuellement
+
+Le but est d'avoir une vue d'ensemble des erreurs de classe, de format pour ne pas être surpris au moment de les modifier ou de créer des variables.\
+Et un début d'impression sur la distribution des variables
+
+### 2ème chose à faire: chercher les variables d'intérêt
+
+> Votre maitre de stage veut que vous travailliez sur plusieurs variables : ID, le genre, Age, Race, Si oui ou non la personne travaille, Le poids la taille, la tension artérielle, Tabac, Activité physique, le niveau d'éducation, depressed, sleep trouble et une variable Commentaires.
+
+En général, c'est à vous de chercher les variables d'intérêt en fonction de la description succincte, de la littérature, de vos connaissance sur un sujet.
+
+Ici, on ne nous donne pas directement les variables, il faut donc les chercher. Il n'y en a pas énormément mais on peut procéder à taton comme suit :
+
+```{r, eval=FALSE }
+# 1. Sélection des variables demandés ----
+#___________________________----
+
+# j'essaie de trouver les variables qu'il me demande
+d_nhanes_join %>% 
+  select(ID, Gender, Age, 
+         contains("Race"),
+         Work, Weight, Height, 
+         starts_with("BP"),
+         contains("smok"),
+         Education,
+         contains("PhysActive"),
+         Depressed,
+         SleepTrouble,
+         Commentaires
+         ) %>%  names()
+
+
+# Qu'est ce que Race3?
+summary(d_nhanes_join$Race3) #Que des NA, je peux l'enlever
+
+d_nhanes_join %>% 
+  select(ID, Gender, Age, 
+         Race1,
+         Work, Weight, Height, 
+         starts_with("BP"),
+         contains("smok"),
+         Education,
+         contains("PhysActive"),
+         Depressed,
+         SleepTrouble,
+         Commentaires
+  ) %>%  names()
+
+# Qu'est ce que Smoke100, Smoke100n 
+summary(d_nhanes_join$Smoke100)
+library(crosstable)
+crosstable(d_nhanes_join,
+           c(Smoke100, Smoke100n),
+           by=SmokeNow) # On suppose que c'est smoke dans les 100 derniers jours,
+
+# Comme on est pas sur, on veut prendre uniquement les fumeurs du moment :
+d_nhanes_join %>% 
+  select(ID, Gender, Age, 
+         Race1,
+         Work, Weight, Height, 
+         starts_with("BP"),
+         SmokeNow,
+         Education,
+         contains("PhysActive"),
+         Depressed,
+         SleepTrouble,
+         Commentaires
+  ) %>%  names()
+
+# Qu'est ce que PhysActiveDays selon vous? 
+crosstable(d_nhanes_join,
+           PhysActiveDays,
+           by=PhysActive)
+
+# Nous on veut juste savoir si ils sont physically active oui ou non. 
+d_nhanes_join %>% 
+  select(ID, Gender, Age, 
+         Race1,
+         Work, Weight, Height, 
+         starts_with("BP"),
+         SmokeNow,
+         Education,
+         PhysActive,
+         Depressed,
+         SleepTrouble,
+         Commentaires
+  ) %>%  names()
+
+# On peut maintenant le mettre dans un nouvel objet car on est sur des variables
+# sélectionnées 
+d=d_nhanes_join %>% 
+  select(ID, Gender, Age, 
+         Race1,
+         Work, Weight, Height, 
+         starts_with("BP"),
+         SmokeNow,
+         Education,
+         PhysActive,
+         Depressed,
+         SleepTrouble,
+         Commentaires
+  )
+
+# On veut visualiser globalement les données, voir sous quel formats ils sont maintenant: 
+library(labelled)
+look_for(d)
+```
+
+### 5ème chose à faire : sélectionner les variables d'intérêt
+
+Pour rechercher vous avez plusieurs façon de faire et cela suppose dans tout les cas de savoir ce que vous voulez et de vous poser des questions en ammont.
+
+Vous pouvez faire des recherches par types de caractère
+
+### 6ème chose à faire : Creer et modifier les variables
+
+#### 1 . Créer un script (ou une section) création de variable.
+
+Ainsi vous saurez exactement comment vous avez codé les variables que vous avez utiliser: reproductibilité et transparence. Je créé aussi un script ou une section dédiée à la vérification des variables créés par rapport aux variables d'origine.\
+Croyez moi j'ai déjà fait des erreurs et ce n'était pas aussi clair et j'ai du refaire mes variables, refaire des vérifications que j'avais déjà fait etc.. C'est très important.
+
+### 7ème chose à faire : Création et modifications de variables
+
+ATTENTION : vous n'aurez pas toujours des messages d'erreurs, parfois R va faire mais ça n'aura aucun sens.
+
+#### a. Création de variables
+
+Il y a plusieurs cas de figures :
+
+\- Créer une variable en faisant une opération (exemple passer du poids et de la taille à l'imc en mettant des pièges)
+
+\- Créer des variables en utilisant les conditions :
+
+```         
+- découper une variable numérique en quartile
+
+- pour catégoriser une variable numérique
+
+- regrouper les catégories d'une variable
+
+- pour créer une variable à partir de deux variables
+
+- modifier plusieurs colonnes en une fonction avec across
+```
+
+\- Dans tous les cas il faut vérifier chaque fois qu'on crée et modifie une fonction que nous avons fait ce que nous voulions. (notamment comportement face aux données manquantes)
+
+Pour renommer les variables :
+
+Pour creer des variables :
+
+J'utilise personnellement "mutate"
+
+Modification de la classe des variables :
+
+fonctions 'as'.
+
+exemple :
+
+Transformer l'IMC de charactère en numeric
+
+Pour catégoriser l'IMC selon les catégories de l'OMS avec case_when
+
+Pour vérifier, j'utilise crosstable() mais le principe c'est de croiser l'ancienne variable avec la nouvelle.
+
+#### b. Les facteurs et les levels
+
+Les facteurs sont la classe de R pour gérer les variables catégorielles. Il permet également de hiérarchiser les catégories, ce qui est très important pour les analayses en régression.
+
+Cela permet également de labelliser les variables et de
+
+#### c. Faire une modification commune à plusieurs variables à la fois.
+
+#### d. Modification d'un vecteurs de texte mal nettoyé/ texte libre
+
+Cela arrive souvent et il faut vous y préparer. Certaines fonctions existe pour fluidifier vos catégorisation dans du texte libre et un certain langage appelé "régular expression" vous permet de chercher au milieu de texte libre pour recatégoriser au mieux les choses
